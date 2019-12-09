@@ -27,7 +27,7 @@ const int ledPin =  13;      // the number of the LED pin
 // variables will change:
 volatile int buttonState = 0;         // variable for reading the pushbutton status
 //timer
-unsigned long ts = 0, new_ts = 0, loopts = 0, new_loopts = 0; //timestamp
+unsigned long ts = 0, new_ts = 0, loopts = 0, new_loopts = 0; //timestamps (don't want to use delay)
 
 void publishMQTT(String topic, String incoming) {
   Serial.println("MQTT: " + mqttClient + ": " + topic + ":" + incoming);
@@ -37,7 +37,7 @@ void publishMQTT(String topic, String incoming) {
   char topicBuf[topic.length() + 1];
   topic.toCharArray(topicBuf, topic.length() + 1);
   client.publish(topicBuf, charBuf);
-}
+} //regular publish. Probably should add true or false instead of a new method :rolleyes:
 
 void publish_gated(String topic, String incoming) {
   new_loopts = millis();
@@ -52,6 +52,7 @@ void publish_gated(String topic, String incoming) {
     client.publish(topicBuf, charBuf);
   }
 }
+
 void setup_wifi() {
   delay(10);
   //Connect to a WiFi network
@@ -114,7 +115,7 @@ void setup() {
 void loop() {
   //MQTT Loop
   new_ts = millis();
-  if (new_ts - ts > 10000) {
+  if (new_ts - ts > 10000) { //check in every ten secs.
     publishMQTT(mqtt_debug, "hoi");
     ts = new_ts;
   }
