@@ -21,8 +21,12 @@ const char* mqtt_debug = "SD18/Debug";
 
 
 
+
 const int buttonPin = 0;     // the number of the pushbutton pin
 const int ledPin =  13;      // the number of the LED pin
+const int relayPin = D1; //relay
+
+
 
 // variables will change:
 volatile int buttonState = 0;         // variable for reading the pushbutton status
@@ -98,7 +102,8 @@ void reconnect() {
 
 void setup() {
   Serial.begin(115200);
-
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, LOW);
   setup_wifi();
 
   //Init MQTT Client
@@ -127,7 +132,14 @@ void loop() {
 
 void pin_ISR() {
   buttonState = digitalRead(buttonPin);
+  Serial.println(String(buttonState));
   publish_gated(mqtt_topic, "dring");
   digitalWrite(LED_BUILTIN, buttonState);
+  if (buttonState == 1) {
+    digitalWrite(relayPin, LOW);
+  } else {
+    digitalWrite(relayPin, HIGH);
+  }
+
 
 }
