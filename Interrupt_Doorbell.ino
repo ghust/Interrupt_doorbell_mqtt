@@ -18,7 +18,7 @@ String mqttClient = "client"; //this will be overwritten when connecting.
 const char* mqtt_topic = "SD18/Interrupt";
 const char* mqtt_debug = "SD18/Debug";
 
-const int buttonPin = 0;     // the number of the pushbutton pin
+const int buttonPin = 0;     // D3
 const int ledPin =  13;      // the number of the LED pin
 const int relayPin = D1; //relay
 
@@ -40,12 +40,12 @@ void publishMQTT(String topic, String incoming) {
   client.publish(topicBuf, charBuf);
 }
 
- void publish_gated(String topic, String incoming) {
-    new_loopts = millis();
-    if (new_loopts - loopts > 10000) {
-      loopts = new_loopts;
-      publishMQTT(topic, incoming);
-    }
+void publish_gated(String topic, String incoming) {
+  new_loopts = millis();
+  if (new_loopts - loopts > 10000) {
+    loopts = new_loopts;
+    publishMQTT(topic, incoming);
+  }
 }
 
 void setup_wifi() {
@@ -79,7 +79,7 @@ void reconnect() {
     if (client.connect(clientId.c_str(), mqtt_user, mqtt_password)) {
       Serial.println("connected as " + clientId);
       // Once connected, publish an announcement...
-      publishMQTT(mqtt_debug, "hoi");
+      publishMQTT(mqtt_debug, "Checking in");
 
     } else {
       Serial.print("failed, rc=");
@@ -93,7 +93,7 @@ void reconnect() {
 
 void setup() {
   Serial.begin(115200);
-  
+
   //define our relay pin as output and pull it low.
   pinMode(relayPin, OUTPUT);
   digitalWrite(relayPin, LOW);
@@ -105,10 +105,10 @@ void setup() {
   // initialize the LED pin as an output:
   pinMode(LED_BUILTIN, OUTPUT);
   // initialize the pushbutton pin as an input:
-  pinMode(buttonPin, INPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
   // Attach an interrupt to the ISR vector
   attachInterrupt(0, pin_ISR, CHANGE);
-  
+
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
@@ -123,19 +123,22 @@ void loop() {
     reconnect();
   }
   client.loop();
+  buttonState = digitalRead(buttonPin);
+  //Serial.println(String(buttonState));
 }
-
-// The interrupt handler. If an interrupt happens (a change on that pin), Serial print the button state, publish an MQTT message using the gate function, and set the relay to the desired state.
-// You may need to invert the LOW/HIGH depending if you connected using NO or NC.
+bool isLow = false;
+// will detect every change. When a button press occurs it will be LOW (0), so we're sending an MQTT message when that happens.
+// I mimic the relay status with the button state (because else you'd only have the half of the chime)
+// I use the gated function because I don't want 200 messages on every button press ;)
 void pin_ISR() {
   buttonState = digitalRead(buttonPin);
   Serial.println(String(buttonState));
-  publish_gated(mqtt_topic, "dring");
   digitalWrite(LED_BUILTIN, buttonState);
   if (buttonState == 1) {
     digitalWrite(relayPin, LOW);
   } else {
     digitalWrite(relayPin, HIGH);
+    publish_gated(mqtt_topic, "Push");
   }
 
 
