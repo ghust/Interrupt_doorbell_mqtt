@@ -8,19 +8,15 @@ PubSubClient client(espClient);
 
 const char* ssid = SECRET_SSID;
 const char* password = SECRET_PASSWORD;
-
 const char* mqtt_server = SECRET_MQTT_IP;
 const int   mqtt_port = SECRET_MQTT_PORT;
 const char* mqtt_user = SECRET_MQTT_USER;
 const char* mqtt_password = SECRET_MQTT_PASSWD;
-String mqttClient = "client";
+String mqttClient = "client"; //this will be overwritten when connecting.
 
+// Things to change
 const char* mqtt_topic = "SD18/Interrupt";
 const char* mqtt_debug = "SD18/Debug";
-
-
-
-
 
 const int buttonPin = 0;     // the number of the pushbutton pin
 const int ledPin =  13;      // the number of the LED pin
@@ -31,8 +27,9 @@ const int relayPin = D1; //relay
 // variables will change:
 volatile int buttonState = 0;         // variable for reading the pushbutton status
 //timer
-unsigned long ts = 0, new_ts = 0, loopts = 0, new_loopts = 0; //timestamps (don't want to use delay)
+unsigned long ts = 0, new_ts = 0, loopts = 0, new_loopts = 0; //timestamps
 
+//
 void publishMQTT(String topic, String incoming) {
   Serial.println("MQTT: " + mqttClient + ": " + topic + ":" + incoming);
   char charBuf[incoming.length() + 1];
@@ -41,20 +38,14 @@ void publishMQTT(String topic, String incoming) {
   char topicBuf[topic.length() + 1];
   topic.toCharArray(topicBuf, topic.length() + 1);
   client.publish(topicBuf, charBuf);
-} //regular publish. Probably should add true or false instead of a new method :rolleyes:
+}
 
-void publish_gated(String topic, String incoming) {
-  new_loopts = millis();
-  if (new_loopts - loopts > 10000) {
-    loopts = new_loopts;
-    Serial.println("MQTT: " + mqttClient + ": " + topic + ":" + incoming);
-    char charBuf[incoming.length() + 1];
-    incoming.toCharArray(charBuf, incoming.length() + 1);
-
-    char topicBuf[topic.length() + 1];
-    topic.toCharArray(topicBuf, topic.length() + 1);
-    client.publish(topicBuf, charBuf);
-  }
+ void publish_gated(String topic, String incoming) {
+    new_loopts = millis();
+    if (new_loopts - loopts > 10000) {
+      loopts = new_loopts;
+      publishMQTT(topic, incoming);
+    }
 }
 
 void setup_wifi() {
@@ -102,9 +93,11 @@ void reconnect() {
 
 void setup() {
   Serial.begin(115200);
+  
+  //define our relay pin as output and pull it low.
   pinMode(relayPin, OUTPUT);
   digitalWrite(relayPin, LOW);
-  
+
   setup_wifi();
 
   //Init MQTT Client
@@ -115,6 +108,7 @@ void setup() {
   pinMode(buttonPin, INPUT);
   // Attach an interrupt to the ISR vector
   attachInterrupt(0, pin_ISR, CHANGE);
+  
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
@@ -122,7 +116,7 @@ void loop() {
   //MQTT Loop
   new_ts = millis();
   if (new_ts - ts > 10000) { //check in every ten secs.
-    publishMQTT(mqtt_debug, "hoi");
+    publishMQTT(mqtt_debug, "Checking In");
     ts = new_ts;
   }
   if (!client.connected()) {
@@ -131,6 +125,8 @@ void loop() {
   client.loop();
 }
 
+// The interrupt handler. If an interrupt happens (a change on that pin), Serial print the button state, publish an MQTT message using the gate function, and set the relay to the desired state.
+// You may need to invert the LOW/HIGH depending if you connected using NO or NC.
 void pin_ISR() {
   buttonState = digitalRead(buttonPin);
   Serial.println(String(buttonState));
