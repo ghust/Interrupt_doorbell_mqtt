@@ -105,9 +105,9 @@ void setup() {
   // initialize the LED pin as an output:
   pinMode(LED_BUILTIN, OUTPUT);
   // initialize the pushbutton pin as an input:
-  pinMode(buttonPin, INPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
   // Attach an interrupt to the ISR vector
-  attachInterrupt(0, pin_ISR, CHANGE);
+  attachInterrupt(buttonPin, pin_ISR, CHANGE);
 
   digitalWrite(LED_BUILTIN, HIGH);
 }
