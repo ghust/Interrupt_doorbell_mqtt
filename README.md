@@ -24,7 +24,7 @@ As we use Home Assistant as our Automation hub and integrate almost everything u
 
 - Attach the relay shield on the Wemos D1 mini.
 Line up the pins, connect them using the pins that were included, give it a little touch of solder.
-- On the relay shield, attach one of the chime wires to the center one (comomon), the other to NC pin.
+- On the relay shield, attach one of the chime wires to the center one (common), the other to NC pin.
 - Attach one of the doorbell wires to ground (G) on the Wemos D1 and the other on the D3 pin.
 - Attach a 10k resistor between D3 and 5V.
 
