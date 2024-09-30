@@ -134,7 +134,7 @@ void pin_ISR() {
   buttonState = digitalRead(buttonPin);
   Serial.println(String(buttonState));
   digitalWrite(LED_BUILTIN, buttonState);
-  if (buttonState == 1) {
+  if (buttonState == 0) { 
     digitalWrite(relayPin, LOW);
   } else {
     digitalWrite(relayPin, HIGH);
